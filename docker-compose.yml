@@ -5,18 +5,18 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8080:80" # localhost:8080 -> container :80
     environment:
-      - WORDPRESS_DB_HOST=db
-      - WORDPRESS_DB_USER=${DB_USER}
-      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
-      - WORDPRESS_DB_NAME=${DB_NAME}
-      - WORDPRESS_DEBUG=${WORDPRESS_DEBUG}
-      - GRAPHQL_DEBUG=1
-      - GRAPHQL_SHOW_QUERY_LOG=1
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG}
+      GRAPHQL_DEBUG: "1"
+      GRAPHQL_SHOW_QUERY_LOG: "1"
     volumes:
-      - wordpress_data:/var/www/html
-      - ./wp-content:/var/www/html/wp-content:delegated
+      - wordpress_data:/var/www/html # full WP tree (named volume)
+      - ./wp-content:/var/www/html/wp-content:delegated # theme & plugins you edit
     depends_on:
       db:
         condition: service_healthy
@@ -32,10 +32,10 @@ services:
     image: mariadb:10.11
     restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     networks:

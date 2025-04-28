@@ -19,9 +19,10 @@ RUN set -eux; \
 ENV WP_CLI_VERSION="2.10.0" \
     WP_CLI_ALLOW_ROOT="1"
 
-RUN curl -fsSL "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" -o /usr/local/bin/wp && \
-    chmod +x /usr/local/bin/wp && \
-    wp --info --allow-root
+RUN curl -fsSL "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" \
+      -o /usr/local/bin/wp \
+ && chmod +x /usr/local/bin/wp \
+ && wp --info --allow-root
 
 # --------------------------------------------------------------------
 # 3) Apache tweaks
@@ -29,27 +30,12 @@ RUN curl -fsSL "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VER
 RUN a2enmod rewrite headers expires
 
 # --------------------------------------------------------------------
-# 4) Default .htaccess
+# 4) Runtime permission fix (executed automatically by the official entrypoint)
 # --------------------------------------------------------------------
-RUN printf '%s\n' \
-  '# BEGIN WordPress' \
-  '<IfModule mod_rewrite.c>' \
-  'RewriteEngine On' \
-  'RewriteBase /' \
-  'RewriteRule ^index\.php$ - [L]' \
-  'RewriteCond %{REQUEST_FILENAME} !-f' \
-  'RewriteCond %{REQUEST_FILENAME} !-d' \
-  'RewriteRule . /index.php [L]' \
-  '</IfModule>' \
-  '# END WordPress' \
-  > /var/www/html/.htaccess
+RUN mkdir -p /usr/local/etc/docker-entrypoint.d
+COPY docker-entrypoint.d/10-fix-perms.sh /usr/local/etc/docker-entrypoint.d/10-fix-perms.sh
+RUN chmod +x /usr/local/etc/docker-entrypoint.d/10-fix-perms.sh
 
 # --------------------------------------------------------------------
-# 5) Correct filesystem permissions
+# 5) Done – keep default (root) user so entrypoint can work normally
 # --------------------------------------------------------------------
-RUN chown -R www-data:www-data /var/www/html
-
-# --------------------------------------------------------------------
-# 6) Drop to the www-data user by default
-# --------------------------------------------------------------------
-USER www-data
