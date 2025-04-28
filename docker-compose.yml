@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  wordpress:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DEBUG=${WORDPRESS_DEBUG}
+      - GRAPHQL_DEBUG=1
+      - GRAPHQL_SHOW_QUERY_LOG=1
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wp-content:/var/www/html/wp-content:delegated
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - wordpress_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/wp-admin/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wordpress_net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  wordpress_data:
+    driver: local
+  db_data:
+    driver: local
+
+networks:
+  wordpress_net:
+    driver: bridge
